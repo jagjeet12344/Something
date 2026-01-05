@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Happiest Birthday 🎂</title>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  body{
+    margin:0; font-family:'Poppins',sans-serif;
+    background: radial-gradient(circle at top left, #fff5f8, #ffdde1 40%, #ee9ca7 90%);
+    overflow:auto; /* allow scrolling when zoomed */
+  }
+
+  /* Curtain panels */
+  .curtain{position:fixed; top:0; left:0; width:100%; height:100%; display:flex; z-index:9999;}
+  .panel{flex:1; background:#d12a6a; transition:transform 2s ease-in-out;}
+  .panel.left{transform:translateX(0);}
+  .panel.right{transform:translateX(0);}
+  .curtain.open .panel.left{transform:translateX(-100%);}
+  .curtain.open .panel.right{transform:translateX(100%);}
+
+  /* Black background for bear */
+  .bear-bg{
+    position:fixed; top:0; left:0; width:100%; height:100%;
+    background:black; z-index:9997; opacity:0; transition:opacity 2s ease;
+  }
+  .bear-bg.show{opacity:1;}
+
+  /* Bear image */
+  .bear{
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+    z-index:9998; opacity:0; transition:opacity 2s ease;
+    max-width:500px;   /* increased size */
+    border-radius:20px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.3);
+  }
+  .bear.show{opacity:1;}
+
+  /* Card wrapper */
+  .wrap{max-width:1100px; margin:0 auto; padding:24px; opacity:0; transform:scale(0.95); transition:opacity 5000ms ease, transform 5000ms cubic-bezier(.2,.9,.2,1); position:relative; z-index:10010}
+  .wrap.show{opacity:1; transform:scale(1);}
+
+  /* Card styling */
+  .card{
+    background:#ffffff; /* make fully opaque so dim background doesn't darken card */
+    border-radius:28px;
+    border:8px solid transparent;
+    background-image:
+      linear-gradient(white,white),
+      repeating-linear-gradient(45deg, #ffb3d1, #ffb3d1 10px, #ffe69b 10px, #ffe69b 20px);
+    background-origin:border-box;
+    background-clip:content-box, border-box;
+    box-shadow:0 18px 40px rgba(0,0,0,0.12);
+    position:relative;
+    z-index:10002; /* keep card above dim background */
+  }
+
+  /* dim background removed (cracker animation only) */
+
+  /* Side background behind the card (keeps card white while rest is dark) */
+  .side-bg{position:fixed; inset:0; background:#000; opacity:0; visibility:hidden; transition:opacity 400ms ease; z-index:10000; pointer-events:none}
+  .side-bg.show{opacity:0.95; visibility:visible}
+
+  /* Confetti container + pieces */
+  .confetti{position:fixed; inset:0; pointer-events:none; z-index:10001; overflow:hidden}
+  .confetti-piece{position:absolute; width:10px; height:16px; opacity:0.95; transform-origin:center; will-change:transform, opacity}
+  @keyframes confetti-fall{
+    0%{transform:translateY(-10vh) rotate(0deg); opacity:1}
+    100%{transform:translateY(110vh) rotate(720deg); opacity:0.85}
+  }
+
+  /* Play overlay when autoplay is blocked */
+  .play-overlay{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:transparent; z-index:10005; opacity:0; visibility:hidden; transition:opacity .25s ease, visibility .25s ease; border-radius:20px; pointer-events:none}
+  .play-overlay.show{opacity:1; visibility:visible}
+  .play-overlay.show{pointer-events:auto}
+  .play-overlay button{background:rgba(255,255,255,0.95); border:none; padding:18px 28px; font-size:22px; border-radius:12px; cursor:pointer; box-shadow:0 6px 18px rgba(0,0,0,0.2)}
+
+  .header{text-align:center; padding:40px 32px 24px; background:linear-gradient(135deg,#ffe3f0,#fff);}
+  .title{font-family:'Pacifico',cursive; font-size:clamp(36px,7vw,64px); color:#d12a6a;}
+  .subtitle{color:#7a3552;}
+
+  /* Side by side layout */
+  .content{display:flex; gap:30px; padding:20px;}
+  .photos{flex:1; display:flex; flex-direction:column; gap:20px; align-items:center;}
+  .note{flex:2; padding:20px; border:2px dashed #ffd3e6; border-radius:20px; background:#fff;}
+  .note h3{margin:0 0 10px; color:#b02265;}
+  .note p{margin:8px 0;}
+
+  /* Shapes */
+  .photo{width:160px; height:160px; overflow:hidden; box-shadow:0 8px 20px rgba(0,0,0,0.15);}
+  .photo img{width:100%; height:100%; object-fit:cover;}
+  .heart-shape{clip-path: polygon(50% 15%, 61% 0, 79% 0, 100% 21%, 100% 45%, 50% 100%, 0 45%, 0 21%, 21% 0, 39% 0);}
+  .circle-shape{border-radius:50%;}
+  .rect-shape{border-radius:0;}
+  .round-shape{border-radius:20px;}
+
+  .footer{text-align:center; padding:20px; color:#7a3552;}
+</style>
+</head>
+<body>
+
+<!-- Curtain panels -->
+<div class="curtain" id="curtain">
+  <div class="panel left"></div>
+  <div class="panel right"></div>
+</div>
+
+<!-- Black background for bear -->
+<div class="bear-bg" id="bear-bg"></div>
+
+<!-- Confetti container (cracker animation only) -->
+<div id="confetti" class="confetti" aria-hidden="true"></div>
+
+<!-- Side black background behind card (card sits above it) -->
+<div id="side-bg" class="side-bg" aria-hidden="true"></div>
+
+<!-- Bear image -->
+<img src="bear.jpeg" alt="Cute Bear" class="bear" id="bear">
+
+<div class="wrap" id="wrap">
+  <div class="card">
+    <div class="header">
+      <h1 class="title">Happiest Birthday to my cute sa bear 🎂💖</h1>
+      <p class="subtitle">1 December | Today’s all about you — laughter, memories, and a little magic.</p>
+    </div>
+
+    <!-- Play overlay shown if autoplay is blocked -->
+    <div id="play-overlay" class="play-overlay" aria-hidden="true">
+      <button id="play-btn" aria-label="Play music" onclick="tryPlay()">▶ Play music</button>
+    </div>
+
+    <div class="content">
+      <!-- Photos left side -->
+      <div class="photos">
+        <div class="photo heart-shape"><img src="photo1.jpg" alt="Memory 1"></div>
+        <div class="photo circle-shape"><img src="photo2.jpg" alt="Memory 2"></div>
+        <div class="photo rect-shape"><img src="photo3.jpg" alt="Memory 3"></div>
+        <div class="photo round-shape"><img src="photo4.jpg" alt="Memory 4"></div>
+        <div class="photo rect-shape"><img src="photo5.jpg" alt="Memory 5"></div>
+      </div>
+
+      <!-- Text right side -->
+      <section class="note" contenteditable="true" aria-label="Birthday message">
+        <h3>My message to you</h3>
+        <h2>💫🎂💫🎂 Happiest Birthday Khushi 🐻  💖
+Tumhara naam hi sab kuch keh deta hai — Khushi, jo sabke life mein smile le aati ho ☀️
+
+Tumhara har din utna hi special ho jitni tum khud ho 💕
+
+Tum meri life ka wo part ho jahan peace aur positive vibes milti hain 🤍
+
+Bas aise hi hamesha khilti raho, chamakti raho, aur duniya jeet lo apni smile se ✨🌍😂
+
+Main wish krunga tumhara har sapna sach ho 💫
+
+, life mein happiness, aur dil mein sukoon mile 🤍
+Tum jaise hardworking aur kind-hearted women deserve karte hain aur tum bahut strong hoo mere sai bhi jayada 😂aur abb intelligent bhi hoo chuki hoo jii.. kaafi kya glt hai aur shi yai bhi tumhe samjh aanai lga hai🐻.. bss kabhi mere koo bhudhu nah bna daina😂..
+
+best of everything 🌸
+Aur haan, aaj ke din sirf enjoy karna hai 😌
+
+Aur hnn jayada gussa mtt kiya kro..i know kii tumhare
+ upar ghar kaa itna sara kaam hai orr uper sai tumhe padhna bhi hota..
+Thori muskil hogi lekin yai bhi life kaa eak phase hai joh jldi khtm hoga 
+Aur tum wapis sai maze sai rehne lagogi...😅🫡
+
+Chalo hamlog saath mai ghuma jayega 😂 
+Jab aaunga tab toh..aur jha jha tumhara mnn hoo.
+Bss tumhe permission mil jaye🥶..
+Fir toh maze kr sktai hai.. 
+Aur tumhare collage bhi chal chalunga 😂..
+Orr hnn
+Aaj ke din sab kuch tumhare naam 😘💕
+
+Happy Birthday once again meri Khushi 💖🐻
+May your life shine brighter than these birthday lights ✨
+Lots of love, laughter, and blessings always 💫
+
+Hehehe😂💗 ...</h2>
+      </section>
+    </div>
+
+    <!-- Audio: start when cracker/confetti animation begins (autoplay removed) -->
+    <audio id="player" src="sweet.mp3" loop preload="auto"></audio>
+
+    <div class="footer">Made with 💖 by Jagjeet</div>
+  </div>
+</div>
+
+<script>
+  window.onload = function(){
+    const curtain=document.getElementById('curtain');
+    const bear=document.getElementById('bear');
+    const bearBg=document.getElementById('bear-bg');
+    const wrap=document.getElementById('wrap');
+    const player=document.getElementById('player');
+
+    // open curtain after 1s
+    setTimeout(()=>curtain.classList.add('open'),1000);
+
+    // show black background + bear after curtain opens
+    setTimeout(()=>{
+      bearBg.classList.add('show');
+      bear.classList.add('show');
+    },2500);
+
+    // hide bear background + bear and start cracker -> then show card
+    setTimeout(()=>{
+      bear.style.display='none';
+      bearBg.style.display='none';
+
+      // start confetti bursts for 60 seconds and attempt playback immediately
+      launchConfetti(60000);
+      // confetti starts, music will start with card
+
+      // reveal the card after a short cracker burst
+        setTimeout(()=>{
+          // show the black side background first (card remains above it)
+          const sideBg = document.getElementById('side-bg');
+          if(sideBg) sideBg.classList.add('show');
+          wrap.classList.add('show');
+
+          // start music when card appears
+          player.play().then(()=>{
+            // playback started with card
+          }).catch(err=>{
+            console.log('Autoplay blocked at card reveal:', err);
+            const overlay = document.getElementById('play-overlay');
+            if(overlay){ overlay.classList.add('show'); overlay.setAttribute('aria-hidden','false'); }
+          });
+        }, 1800);
+
+      // attach play button handler (kept in addition to onclick fallback)
+      const playBtn = document.getElementById('play-btn');
+      if(playBtn){
+        playBtn.addEventListener('click', ()=>{ tryPlay(); });
+      }
+
+    },5000);
+
+    // confetti launcher: spawns bursts repeatedly for durationMs
+    function launchConfetti(durationMs = 60000){
+      const confetti = document.getElementById('confetti');
+      if(!confetti) return;
+      const colors = ['#ff4da6','#ffd11a','#6ee7b7','#7cc6ff','#ff9f43','#e67af6'];
+      const endTime = Date.now() + durationMs;
+      const burstInterval = 400; // ms between bursts
+
+      const timer = setInterval(()=>{
+        // spawn a small burst
+        for(let i=0;i<12;i++){
+          const el = document.createElement('div');
+          el.className = 'confetti-piece';
+          const size = Math.floor(Math.random()*12)+6;
+          el.style.width = size+'px';
+          el.style.height = Math.floor(size*1.4)+'px';
+          el.style.left = Math.random()*100 + '%';
+          el.style.background = colors[Math.floor(Math.random()*colors.length)];
+          const duration = 2 + Math.random()*4; // 2-6s
+          el.style.transform = `translateY(-20vh) rotate(${Math.random()*360}deg)`;
+          el.style.animation = `confetti-fall ${duration}s 0s linear forwards`;
+          confetti.appendChild(el);
+          // remove after animation
+          setTimeout(()=>{ if(el && el.parentNode) el.parentNode.removeChild(el); }, (duration+0.3)*1000);
+        }
+        if(Date.now() > endTime){ clearInterval(timer); }
+      }, burstInterval);
+      // safety clear after +10s
+      setTimeout(()=>{ clearInterval(timer); }, durationMs + 10000);
+    }
+
+    // robust play handler used by the overlay button
+    function tryPlay(){
+      const overlay = document.getElementById('play-overlay');
+      const player = document.getElementById('player');
+      if(!player) return;
+      try{
+        // unmute and reset small volume to ensure playback starts
+        player.muted = false;
+        player.volume = 0.9;
+        player.currentTime = player.currentTime || 0;
+        const p = player.play();
+        if(p && p.then){
+          p.then(()=>{
+            if(overlay){ overlay.classList.remove('show'); overlay.setAttribute('aria-hidden','true'); }
+            const btn = document.getElementById('play-btn'); if(btn) btn.textContent = 'Playing ▶';
+          }).catch(e=>{
+            console.log('Playback failed on user click:', e);
+            // try fallback: create new Audio instance
+            try{
+              const a = new Audio(player.src);
+              a.loop = true;
+              a.volume = 0.9;
+              a.play().then(()=>{
+                if(overlay){ overlay.classList.remove('show'); overlay.setAttribute('aria-hidden','true'); }
+                const btn = document.getElementById('play-btn'); if(btn) btn.textContent = 'Playing ▶';
+              }).catch(err=>{ console.log('Fallback audio failed:', err); });
+            }catch(err2){ console.log('Fallback creation failed:', err2); }
+          });
+        }
+      }catch(err){ console.log('tryPlay error:', err); }
+    }
+  }
+</script>
+
+</body>
+</html>
